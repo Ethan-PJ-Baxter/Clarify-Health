@@ -82,7 +82,7 @@ export function OnboardingWizard({ userId }: OnboardingWizardProps) {
 
       toast.success("Profile saved successfully!");
 
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch (error) {
       console.error("Onboarding save error:", error);

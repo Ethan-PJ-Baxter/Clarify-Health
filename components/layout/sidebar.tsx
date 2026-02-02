@@ -24,9 +24,9 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: Home, enabled: true },
-  { label: "Log Symptom", href: "/log", icon: PlusCircle, enabled: false },
-  { label: "Timeline", href: "/timeline", icon: Clock, enabled: false },
+  { label: "Dashboard", href: "/", icon: Home, enabled: true },
+  { label: "Log Symptom", href: "/log", icon: PlusCircle, enabled: true },
+  { label: "Timeline", href: "/timeline", icon: Clock, enabled: true },
   { label: "Body Map", href: "/body-map", icon: User, enabled: false },
   { label: "Medications", href: "/medications", icon: Pill, enabled: false },
   { label: "Reports", href: "/reports", icon: FileText, enabled: false },
@@ -63,7 +63,7 @@ export function Sidebar({ profile, className }: SidebarProps) {
       {/* Logo */}
       <div className="flex h-16 items-center px-6">
         <Link
-          href="/dashboard"
+          href="/"
           className="text-xl font-semibold tracking-tight text-primary"
         >
           Clarify

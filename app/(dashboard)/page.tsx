@@ -1,30 +1,33 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardHome } from "@/components/dashboard/dashboard-home";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // Layout already guarantees user is authenticated and onboarded.
-  // We only need the user ID for queries.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("name")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .single();
 
   const { count: symptomCount } = await supabase
     .from("symptoms")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user!.id);
+    .eq("user_id", user.id);
 
   const { count: medicationCount } = await supabase
     .from("medications")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user!.id)
+    .eq("user_id", user.id)
     .is("ended_at", null);
 
   return (

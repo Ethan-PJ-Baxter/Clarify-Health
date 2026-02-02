@@ -70,7 +70,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");

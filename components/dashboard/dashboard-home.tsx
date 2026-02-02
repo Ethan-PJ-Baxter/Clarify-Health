@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,12 +85,8 @@ export function DashboardHome({
             <p className="mb-4 text-sm text-muted-foreground">
               Describe what you&apos;re experiencing and let AI help document it
             </p>
-            <Button
-              onClick={handleComingSoon}
-              className="min-h-[44px] w-full"
-              size="lg"
-            >
-              Log Symptom
+            <Button asChild className="min-h-[44px] w-full" size="lg">
+              <Link href="/log">Log Symptom</Link>
             </Button>
           </CardContent>
         </Card>
@@ -127,17 +124,22 @@ export function DashboardHome({
                 </p>
                 <Button
                   variant="outline"
-                  onClick={handleComingSoon}
+                  asChild
                   className="min-h-[44px]"
                   size="lg"
                 >
-                  Log Your First Symptom
+                  <Link href="/log">Log Your First Symptom</Link>
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {symptomCount} symptom{symptomCount !== 1 ? "s" : ""} logged.
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {symptomCount} symptom{symptomCount !== 1 ? "s" : ""} logged.
+                </p>
+                <Button variant="ghost" asChild className="min-h-[44px] text-sm">
+                  <Link href="/timeline">View Timeline</Link>
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

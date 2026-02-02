@@ -35,17 +35,18 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Auth pages - redirect to dashboard if already logged in
+  // Auth pages - redirect to home if already logged in
   const authPages = ["/login", "/signup", "/reset-password"];
-  if (user && authPages.some((page) => pathname.startsWith(page))) {
+  if (user && authPages.some((page) => pathname === page || pathname.startsWith(page + "/"))) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
   // Protected routes - redirect to login if not authenticated
-  const protectedPaths = ["/dashboard", "/log", "/timeline", "/body-map", "/reports", "/medications", "/settings", "/onboarding"];
-  if (!user && protectedPaths.some((path) => pathname.startsWith(path))) {
+  const protectedPaths = ["/log", "/timeline", "/body-map", "/reports", "/medications", "/settings", "/onboarding"];
+  const isProtected = pathname === "/" || protectedPaths.some((path) => pathname === path || pathname.startsWith(path + "/"));
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

@@ -10,9 +10,9 @@ interface MobileNavProps {
 }
 
 const navItems = [
-  { label: "Home", href: "/dashboard", icon: Home, enabled: true },
-  { label: "Log", href: "/log", icon: PlusCircle, enabled: false },
-  { label: "Timeline", href: "/timeline", icon: Clock, enabled: false },
+  { label: "Home", href: "/", icon: Home, enabled: true },
+  { label: "Log", href: "/log", icon: PlusCircle, enabled: true },
+  { label: "Timeline", href: "/timeline", icon: Clock, enabled: true },
   { label: "Body Map", href: "/body-map", icon: User, enabled: false },
   { label: "More", href: "/settings", icon: Menu, enabled: false },
 ];

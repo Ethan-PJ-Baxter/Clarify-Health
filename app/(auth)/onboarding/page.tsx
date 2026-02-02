@@ -20,7 +20,7 @@ export default async function OnboardingPage() {
     .single();
 
   if (profile?.onboarding_complete) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   return <OnboardingWizard userId={user.id} />;
