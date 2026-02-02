@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/ethan/Programming/WebDev/Clarify-Health log --all --oneline)",
+      "mcp__plugin_supabase_supabase__search_docs",
+      "Bash(pnpm create:*)",
+      "mcp__plugin_supabase_supabase__get_cost",
+      "mcp__plugin_supabase_supabase__confirm_cost",
+      "mcp__plugin_supabase_supabase__create_project",
+      "Bash(pnpm dlx shadcn@latest add:*)"
+    ]
+  }
+}

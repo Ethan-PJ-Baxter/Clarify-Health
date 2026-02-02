@@ -1,0 +1,900 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification>
+  <meta>
+    <name>Clarify - NHS Symptom Tracker</name>
+    <version>2.0</version>
+    <updated>2026-02-02</updated>
+    <summary>NHS symptom tracker with AI-assisted logging and GP report generation. Helps patients document symptoms comprehensively for better GP communication.</summary>
+  </meta>
+
+  <tech_stack>
+    <frontend>Next.js 14+ (App Router, TypeScript)</frontend>
+    <database>Supabase (PostgreSQL, Auth, Storage)</database>
+    <styling>Tailwind CSS</styling>
+    <ai>Gemini 2.5 Flash API</ai>
+    <deployment>Vercel</deployment>
+  </tech_stack>
+
+  <file_structure>
+    <![CDATA[
+symptom-tracker/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   ├── signup/page.tsx
+│   │   └── onboarding/page.tsx
+│   ├── (dashboard)/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── log/page.tsx
+│   │   ├── timeline/page.tsx
+│   │   ├── body-map/page.tsx
+│   │   ├── reports/page.tsx
+│   │   ├── medications/page.tsx
+│   │   └── settings/page.tsx
+│   ├── api/
+│   │   ├── symptoms/
+│   │   │   ├── analyze/route.ts
+│   │   │   ├── process/route.ts
+│   │   │   ├── [id]/route.ts
+│   │   │   └── route.ts
+│   │   ├── reports/
+│   │   │   ├── generate/route.ts
+│   │   │   └── pdf/route.ts
+│   │   ├── upload/route.ts
+│   │   └── export/route.ts
+│   └── layout.tsx
+├── components/
+│   ├── symptom-logging/
+│   │   ├── initial-input.tsx
+│   │   ├── ai-questions.tsx
+│   │   ├── body-map-picker.tsx
+│   │   ├── photo-upload.tsx
+│   │   └── review-card.tsx
+│   ├── timeline/
+│   │   ├── symptom-card.tsx
+│   │   ├── filters.tsx
+│   │   └── edit-modal.tsx
+│   ├── body-map/
+│   │   ├── interactive-svg.tsx
+│   │   └── heatmap.tsx
+│   ├── reports/
+│   │   ├── report-viewer.tsx
+│   │   └── pdf-export.tsx
+│   ├── ui/
+│   │   ├── loading-states.tsx
+│   │   ├── error-boundary.tsx
+│   │   └── offline-banner.tsx
+│   └── onboarding/
+│       ├── welcome-step.tsx
+│       ├── profile-step.tsx
+│       └── conditions-step.tsx
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts
+│   │   ├── server.ts
+│   │   └── types.ts
+│   ├── ai/
+│   │   └── gemini.ts
+│   └── utils/
+│       ├── offline.ts
+│       └── queue.ts
+└── supabase/
+    └── migrations/
+        └── 001_initial_schema.sql
+    ]]>
+  </file_structure>
+
+  <naming_patterns>
+    <database>
+      <tables>symptoms, medications, reports, user_profiles</tables>
+      <fields>snake_case (body_part, created_at, symptom_type)</fields>
+      <ids>UUID v4</ids>
+    </database>
+    <components>
+      <files>kebab-case (symptom-card.tsx)</files>
+      <exports>PascalCase (SymptomCard)</exports>
+    </components>
+    <api_routes>
+      <pattern>RESTful: /api/symptoms, /api/reports/generate</pattern>
+      <methods>POST for mutations, GET for reads, PATCH for updates, DELETE for removal</methods>
+    </api_routes>
+    <functions>camelCase (analyzeSymptom, generateReport)</functions>
+  </naming_patterns>
+
+  <key_features_and_user_flow>
+    
+    <feature id="1" name="Authentication">
+      <description>Secure email/password authentication with session management</description>
+      
+      <flow name="Signup">
+        <step order="1">User lands on /signup</step>
+        <step order="2">Enters email and password (min 8 chars)</step>
+        <step order="3">Supabase creates account, sends verification email</step>
+        <step order="4">User clicks verification link</step>
+        <step order="5">Redirect to /onboarding (first-time) or /dashboard (returning)</step>
+      </flow>
+      
+      <flow name="Login">
+        <step order="1">User enters credentials on /login</step>
+        <step order="2">Supabase validates, creates session</step>
+        <step order="3">Redirect to /dashboard</step>
+        <step order="4">Session persists for 7 days (refresh token)</step>
+      </flow>
+      
+      <flow name="Password Reset">
+        <step order="1">User clicks "Forgot password" on /login</step>
+        <step order="2">Enters email address</step>
+        <step order="3">Receives reset link via email</step>
+        <step order="4">Sets new password, redirected to /login</step>
+      </flow>
+      
+      <error_states>
+        <error trigger="Invalid credentials">Show "Email or password incorrect" - no specifics</error>
+        <error trigger="Unverified email">Show "Please verify your email" with resend option</error>
+        <error trigger="Rate limited">Show "Too many attempts, try again in 15 minutes"</error>
+      </error_states>
+    </feature>
+
+    <feature id="2" name="Onboarding">
+      <description>First-time user setup to personalize experience</description>
+      
+      <flow name="First Time Setup">
+        <step order="1" screen="Welcome">
+          <content>App introduction, privacy reassurance, what to expect</content>
+          <action>Click "Get Started"</action>
+        </step>
+        <step order="2" screen="Profile">
+          <content>Name (optional), date of birth (for age context), GP surgery name (optional)</content>
+          <action>Fill form, click "Continue"</action>
+          <skip_allowed>true</skip_allowed>
+        </step>
+        <step order="3" screen="Health Background">
+          <content>Any diagnosed conditions? (optional) - searchable list + free text</content>
+          <context>This helps provide context in reports, but is completely optional</context>
+          <examples>Fibromyalgia, IBS, Chronic Fatigue, Diabetes, or leave empty</examples>
+          <action>Add conditions or skip</action>
+          <skip_allowed>true</skip_allowed>
+        </step>
+        <step order="4" screen="Current Medications">
+          <content>Quick-add current medications (optional)</content>
+          <action>Add medications or skip</action>
+          <skip_allowed>true</skip_allowed>
+        </step>
+        <step order="5" screen="Complete">
+          <content>"You're all set! Start logging your first symptom"</content>
+          <action>Redirect to /dashboard or /log</action>
+        </step>
+      </flow>
+      
+      <data_stored>user_profiles table: name, dob, gp_surgery, conditions, onboarding_complete, created_at</data_stored>
+    </feature>
+
+    <feature id="3" name="Dashboard Home">
+      <description>Central hub showing recent activity and quick actions</description>
+      
+      <screen_elements>
+        <element name="Quick Log Button">Prominent CTA to log new symptom</element>
+        <element name="Recent Symptoms">Last 5 symptoms logged with severity indicators</element>
+        <element name="Active Medications">Current medications count with link to full list</element>
+        <element name="Streak/Activity">Days logged this week (encourages consistent tracking)</element>
+        <element name="Generate Report CTA">If 7+ days of data, prompt to generate GP report</element>
+        <element name="Body Map Preview">Mini body map showing symptom hotspots</element>
+      </screen_elements>
+      
+      <empty_state>
+        <condition>No symptoms logged yet</condition>
+        <content>Welcome message, explanation of app benefits, prominent "Log First Symptom" button</content>
+      </empty_state>
+    </feature>
+
+    <feature id="4" name="AI Symptom Logging">
+      <description>Conversational AI-guided symptom entry with structured output</description>
+      
+      <flow name="Log New Symptom">
+        <step order="1" screen="Initial Input">
+          <ui>Large text input with placeholder "Describe what you're experiencing..."</ui>
+          <example_input>"I have a bumpy rash on my left shoulder that burns"</example_input>
+          <action>User types description, clicks "Continue"</action>
+          <api_call>POST /api/symptoms/analyze</api_call>
+          <loading_state>Skeleton UI with "Thinking..." text (3-8 seconds)</loading_state>
+        </step>
+        
+        <step order="2" screen="AI Follow-up Questions">
+          <ui>Card-based Q&amp;A interface, one question visible at a time</ui>
+          <question_types>
+            <type name="multiple_choice">Buttons for predefined options</type>
+            <type name="scale">Slider for 1-10 severity</type>
+            <type name="text">Short text input for specifics</type>
+            <type name="date">Date picker for onset</type>
+          </question_types>
+          <questions_count>3-5 questions based on symptom type</questions_count>
+          <action>Answer each question, auto-advances</action>
+        </step>
+        
+        <step order="3" screen="Body Map Selection">
+          <ui>SVG body diagram (front/back toggle)</ui>
+          <ai_suggestion>AI pre-selects suggested location based on description</ai_suggestion>
+          <user_action>Confirm AI suggestion or tap different location</user_action>
+          <precision>Can zoom for precise placement</precision>
+        </step>
+        
+        <step order="4" screen="Photo Upload" optional="true">
+          <ui>Camera button + gallery picker</ui>
+          <limit>Max 3 photos per symptom</limit>
+          <file_limit>5MB per photo</file_limit>
+          <action>Take/select photos or skip</action>
+        </step>
+        
+        <step order="5" screen="Review &amp; Save">
+          <ui>Structured summary card showing all collected data</ui>
+          <editable_fields>All fields can be tapped to edit</editable_fields>
+          <api_call>POST /api/symptoms/process (structure) then POST /api/symptoms (save)</api_call>
+          <action>Click "Save Symptom"</action>
+          <success_state>Confirmation with "View in Timeline" link</success_state>
+        </step>
+      </flow>
+      
+      <error_states>
+        <error trigger="AI API fails">
+          <fallback>Show manual entry form with all fields</fallback>
+          <message>"AI unavailable - you can still log manually"</message>
+        </error>
+        <error trigger="Network offline">
+          <fallback>Save to local queue, sync when online</fallback>
+          <message>"Saved offline - will sync when connected"</message>
+        </error>
+        <error trigger="Photo upload fails">
+          <fallback>Save symptom without photo, retry upload option</fallback>
+          <message>"Photo couldn't upload - symptom saved, try adding photo later"</message>
+        </error>
+      </error_states>
+    </feature>
+
+    <feature id="5" name="Timeline View">
+      <description>Chronological history of all logged symptoms with filtering</description>
+      
+      <screen_elements>
+        <element name="Symptom Cards">
+          <content>Date, body part, type, severity (color-coded), truncated description</content>
+          <interaction>Tap to expand full details</interaction>
+        </element>
+        <element name="Filter Bar">
+          <filters>
+            <filter name="Date Range">Preset (7d, 30d, 90d, all) or custom picker</filter>
+            <filter name="Body Part">Dropdown of logged body parts</filter>
+            <filter name="Symptom Type">Dropdown of logged types</filter>
+            <filter name="Severity">Min-max slider (1-10)</filter>
+          </filters>
+        </element>
+        <element name="Sort">Newest first (default) or oldest first</element>
+        <element name="Search">Free text search across descriptions</element>
+      </screen_elements>
+      
+      <flow name="View Symptom Detail">
+        <step order="1">Tap symptom card in list</step>
+        <step order="2">Card expands or modal opens with full details</step>
+        <step order="3">Shows: all fields, photos (if any), medications at time, AI conversation log</step>
+        <step order="4">Actions available: Edit, Delete, Add to Report</step>
+      </flow>
+      
+      <flow name="Edit Symptom">
+        <step order="1">From detail view, tap "Edit"</step>
+        <step order="2">Modal opens with editable form (all fields)</step>
+        <step order="3">Make changes, tap "Save Changes"</step>
+        <step order="4">API call: PATCH /api/symptoms/[id]</step>
+        <step order="5">Success toast, return to detail view</step>
+      </flow>
+      
+      <flow name="Delete Symptom">
+        <step order="1">From detail view, tap "Delete"</step>
+        <step order="2">Confirmation modal: "Delete this symptom? This cannot be undone."</step>
+        <step order="3">Confirm deletion</step>
+        <step order="4">API call: DELETE /api/symptoms/[id]</step>
+        <step order="5">Success toast, return to timeline</step>
+      </flow>
+      
+      <pagination>
+        <method>Infinite scroll</method>
+        <batch_size>20 symptoms per load</batch_size>
+        <loading_indicator>Spinner at bottom while loading more</loading_indicator>
+      </pagination>
+      
+      <empty_state>
+        <condition>No symptoms match filters</condition>
+        <content>"No symptoms found" with clear filters button</content>
+      </empty_state>
+    </feature>
+
+    <feature id="6" name="Body Map Visualization">
+      <description>Interactive body diagram showing symptom locations and density</description>
+      
+      <screen_elements>
+        <element name="Body SVG">Front and back views, toggle button to switch</element>
+        <element name="Heatmap Overlay">Color intensity shows symptom density by region</element>
+        <element name="Symptom Markers">Individual dots on exact locations, color-coded by severity</element>
+        <element name="Legend">Severity color scale (green=mild, yellow=moderate, red=severe)</element>
+        <element name="Date Filter">Filter which symptoms show on map</element>
+      </screen_elements>
+      
+      <interactions>
+        <interaction name="Tap Region">Shows list of symptoms in that body area</interaction>
+        <interaction name="Tap Marker">Opens symptom detail modal</interaction>
+        <interaction name="Pinch Zoom">Zoom into body area for dense symptom clusters</interaction>
+        <interaction name="Quick Log">Long-press region to start logging symptom at that location</interaction>
+      </interactions>
+      
+      <body_regions>
+        <region>head, neck, left_shoulder, right_shoulder, chest, upper_back, lower_back, abdomen, left_arm, right_arm, left_hand, right_hand, left_hip, right_hip, left_leg, right_leg, left_foot, right_foot</region>
+      </body_regions>
+    </feature>
+
+    <feature id="7" name="AI Report Generation">
+      <description>Generate comprehensive GP-ready reports from symptom data</description>
+      
+      <flow name="Generate Report">
+        <step order="1" screen="Report Setup">
+          <ui>Date range selector (default: last 30 days)</ui>
+          <validation>Minimum 3 symptoms required in range</validation>
+          <preview>Shows symptom count and date range summary</preview>
+          <action>Click "Generate Report"</action>
+        </step>
+        
+        <step order="2" screen="Generating">
+          <ui>Progress indicator with stages</ui>
+          <stages>
+            <stage>Gathering symptoms...</stage>
+            <stage>Analyzing patterns...</stage>
+            <stage>Generating summary...</stage>
+            <stage>Finalizing report...</stage>
+          </stages>
+          <duration>10-20 seconds typical</duration>
+        </step>
+        
+        <step order="3" screen="Report Viewer">
+          <sections>
+            <section name="Executive Summary">2-3 paragraph overview for GP quick read</section>
+            <section name="Symptom Breakdown">By type, by body part, severity averages</section>
+            <section name="Patterns Detected">Temporal patterns, trigger correlations, trends</section>
+            <section name="Timeline Visualization">Mini chart of symptom frequency over period</section>
+            <section name="Suggested Questions">Questions patient can ask GP</section>
+            <section name="NHS Links">Relevant NHS.uk pages for symptoms mentioned</section>
+          </sections>
+          <actions>Export PDF, Share, Save, Delete</actions>
+        </step>
+      </flow>
+      
+      <flow name="Export PDF">
+        <step order="1">From report viewer, tap "Export PDF"</step>
+        <step order="2">API call: GET /api/reports/pdf/[id]</step>
+        <step order="3">PDF generated server-side</step>
+        <step order="4">Download triggered or share sheet opens (mobile)</step>
+      </flow>
+      
+      <flow name="View Past Reports">
+        <step order="1">Navigate to /reports</step>
+        <step order="2">List of all generated reports (date, range, symptom count)</step>
+        <step order="3">Tap to view full report</step>
+      </flow>
+      
+      <error_states>
+        <error trigger="Not enough data">
+          <condition>Less than 3 symptoms in range</condition>
+          <message>"Need at least 3 symptoms to generate meaningful report. Log more symptoms or expand date range."</message>
+        </error>
+        <error trigger="AI generation fails">
+          <fallback>Offer basic summary without AI analysis</fallback>
+          <message>"AI analysis unavailable - basic summary generated"</message>
+        </error>
+      </error_states>
+    </feature>
+
+    <feature id="8" name="Medication Management">
+      <description>Track current and past medications with symptom correlation</description>
+      
+      <flow name="Add Medication">
+        <step order="1">Navigate to /medications, tap "Add Medication"</step>
+        <step order="2">Form: Name (searchable), Dosage, Frequency, Start Date</step>
+        <step order="3">Optional: Notes, Reason for taking</step>
+        <step order="4">Save - medication appears in active list</step>
+      </flow>
+      
+      <flow name="Stop Medication">
+        <step order="1">From medication list, tap medication</step>
+        <step order="2">Tap "Mark as Stopped"</step>
+        <step order="3">Enter end date (default: today)</step>
+        <step order="4">Medication moves to "Past Medications" section</step>
+      </flow>
+      
+      <screen_elements>
+        <element name="Active Medications">Current medications with dosage, frequency</element>
+        <element name="Past Medications">Collapsible list of stopped medications with date ranges</element>
+        <element name="Medication Timeline">Visual showing medication periods alongside symptom timeline</element>
+      </screen_elements>
+      
+      <correlation_feature>
+        <description>Show which symptoms occurred while on specific medications</description>
+        <ui>When viewing medication, show linked symptoms during that period</ui>
+      </correlation_feature>
+    </feature>
+
+    <feature id="9" name="Settings and Data">
+      <description>Account management, data export, and preferences</description>
+      
+      <screen_sections>
+        <section name="Account">
+          <items>Email (display), Change Password, Delete Account</items>
+        </section>
+        <section name="Profile">
+          <items>Edit name, DOB, GP surgery, conditions (from onboarding)</items>
+        </section>
+        <section name="Data Export">
+          <items>Export All Data (JSON), Export All Data (CSV), Export Reports (PDF zip)</items>
+          <gdpr_compliance>Full data export within 24 hours</gdpr_compliance>
+        </section>
+        <section name="Data Deletion">
+          <items>Delete All Symptoms, Delete All Reports, Delete Account and All Data</items>
+          <confirmation>Requires password re-entry for destructive actions</confirmation>
+        </section>
+        <section name="Preferences">
+          <items>Default severity scale, Reminder notifications (future), Dark mode (future)</items>
+        </section>
+        <section name="About">
+          <items>Version, Privacy Policy, Terms of Service, Medical Disclaimer</items>
+        </section>
+      </screen_sections>
+      
+      <flow name="Delete Account">
+        <step order="1">Tap "Delete Account"</step>
+        <step order="2">Warning modal explaining data loss</step>
+        <step order="3">Re-enter password to confirm</step>
+        <step order="4">All data deleted, session ended, redirect to /login</step>
+      </flow>
+    </feature>
+
+    <feature id="10" name="Offline Support">
+      <description>Basic functionality when network unavailable</description>
+      
+      <offline_capabilities>
+        <capability name="View Cached Data">Recent symptoms/medications cached locally</capability>
+        <capability name="Log Symptoms">Saved to local queue, synced when online</capability>
+        <capability name="Offline Indicator">Banner at top showing offline status</capability>
+      </offline_capabilities>
+      
+      <sync_behavior>
+        <trigger>When connection restored</trigger>
+        <process>Queue processed in order, conflicts resolved by timestamp</process>
+        <notification>Toast showing "X items synced"</notification>
+      </sync_behavior>
+      
+      <limitations>
+        <limitation>Cannot generate reports offline (requires AI)</limitation>
+        <limitation>Cannot upload photos offline</limitation>
+        <limitation>Limited to last 100 cached symptoms</limitation>
+      </limitations>
+    </feature>
+
+  </key_features_and_user_flow>
+
+  <ui_design>
+    <principles>
+      <principle>Accessibility first - WCAG 2.1 AA compliance</principle>
+      <principle>Mobile-first responsive design</principle>
+      <principle>Calm, medical-appropriate color palette</principle>
+      <principle>Large touch targets (min 44px)</principle>
+      <principle>Clear visual hierarchy</principle>
+    </principles>
+    
+    <color_palette>
+      <color name="Primary">Teal/blue - calming, medical trust</color>
+      <color name="Severity Low">Green (#22c55e)</color>
+      <color name="Severity Medium">Yellow (#eab308)</color>
+      <color name="Severity High">Orange (#f97316)</color>
+      <color name="Severity Critical">Red (#ef4444)</color>
+      <color name="Background">Light grey/white</color>
+      <color name="Text">Dark grey (#1f2937)</color>
+    </color_palette>
+    
+    <loading_states>
+      <state name="AI Processing">Skeleton UI + contextual message</state>
+      <state name="Data Loading">Skeleton cards matching final layout</state>
+      <state name="Button Loading">Spinner replacing button text, disabled state</state>
+      <state name="Page Loading">Full skeleton of page structure</state>
+    </loading_states>
+    
+    <error_display>
+      <style>Inline errors below fields (forms), Toast for actions, Modal for destructive failures</style>
+      <tone>Friendly, non-technical, actionable</tone>
+      <example_bad>"Error 500: Internal server error"</example_bad>
+      <example_good>"Something went wrong saving your symptom. Please try again."</example_good>
+    </error_display>
+  </ui_design>
+
+  <backend>
+    <database_schema>
+      <![CDATA[
+-- User profiles (extends Supabase auth.users)
+CREATE TABLE user_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT,
+  date_of_birth DATE,
+  gp_surgery TEXT,
+  conditions TEXT[],
+  onboarding_complete BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Symptoms table
+CREATE TABLE symptoms (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Core symptom data
+  body_part TEXT NOT NULL,
+  body_coordinates JSONB,
+  symptom_type TEXT NOT NULL,
+  severity INTEGER CHECK (severity BETWEEN 1 AND 10),
+  duration TEXT,
+  description TEXT,
+  onset_date DATE,
+  
+  -- Context
+  triggers TEXT[],
+  relief_factors TEXT[],
+  medications TEXT[],
+  photo_urls TEXT[],
+  
+  -- AI metadata
+  ai_conversation JSONB,
+  ai_characteristics JSONB,
+  mapped_by_ai BOOLEAN DEFAULT false,
+  user_adjusted_location BOOLEAN DEFAULT false
+);
+
+-- Medications table
+CREATE TABLE medications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  dosage TEXT,
+  frequency TEXT,
+  reason TEXT,
+  notes TEXT,
+  started_at DATE NOT NULL,
+  ended_at DATE,
+  is_active BOOLEAN GENERATED ALWAYS AS (ended_at IS NULL) STORED,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Reports table
+CREATE TABLE reports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  date_range_start DATE NOT NULL,
+  date_range_end DATE NOT NULL,
+  
+  -- Report content
+  executive_summary TEXT,
+  symptom_breakdown JSONB,
+  patterns_detected JSONB,
+  suggested_questions TEXT[],
+  nhs_links JSONB,
+  
+  -- Metadata
+  symptom_count INTEGER,
+  ai_model TEXT DEFAULT 'gemini-2.5-flash'
+);
+
+-- Indexes
+CREATE INDEX idx_symptoms_user_created ON symptoms(user_id, created_at DESC);
+CREATE INDEX idx_symptoms_body_part ON symptoms(user_id, body_part);
+CREATE INDEX idx_medications_user ON medications(user_id);
+CREATE INDEX idx_medications_active ON medications(user_id, is_active);
+CREATE INDEX idx_reports_user ON reports(user_id);
+CREATE INDEX idx_user_profiles ON user_profiles(id);
+
+-- RLS Policies
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own profile" ON user_profiles FOR ALL USING (auth.uid() = id);
+
+ALTER TABLE symptoms ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own symptoms" ON symptoms FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE medications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own meds" ON medications FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own reports" ON reports FOR ALL USING (auth.uid() = user_id);
+
+-- Updated_at trigger
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER symptoms_updated_at BEFORE UPDATE ON symptoms
+FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER user_profiles_updated_at BEFORE UPDATE ON user_profiles
+FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+      ]]>
+    </database_schema>
+
+    <api_routes>
+      <route method="POST" path="/api/symptoms/analyze">
+        <input>{ description: string }</input>
+        <process>Calls Gemini to generate follow-up questions</process>
+        <output>{ questions: [], suggested_location: {}, symptom_category: string }</output>
+      </route>
+      
+      <route method="POST" path="/api/symptoms/process">
+        <input>{ initialDescription: string, qAndA: [] }</input>
+        <process>Calls Gemini to structure entry into medical format</process>
+        <output>Structured symptom object ready for saving</output>
+      </route>
+      
+      <route method="POST" path="/api/symptoms">
+        <input>Structured symptom object</input>
+        <process>Validates, saves to DB</process>
+        <output>Created symptom with ID</output>
+      </route>
+      
+      <route method="GET" path="/api/symptoms">
+        <query_params>startDate, endDate, bodyPart, type, minSeverity, maxSeverity, limit, offset</query_params>
+        <output>Filtered symptoms array with pagination</output>
+      </route>
+      
+      <route method="GET" path="/api/symptoms/[id]">
+        <output>Single symptom with all details</output>
+      </route>
+      
+      <route method="PATCH" path="/api/symptoms/[id]">
+        <input>Partial symptom object (fields to update)</input>
+        <output>Updated symptom</output>
+      </route>
+      
+      <route method="DELETE" path="/api/symptoms/[id]">
+        <output>{ success: true }</output>
+      </route>
+      
+      <route method="POST" path="/api/upload">
+        <input>FormData with image file</input>
+        <process>Uploads to Supabase Storage, returns URL</process>
+        <output>{ url: string }</output>
+        <limits>Max 5MB, image/* only</limits>
+      </route>
+      
+      <route method="POST" path="/api/reports/generate">
+        <input>{ dateRangeStart: Date, dateRangeEnd: Date }</input>
+        <process>Fetches symptoms + meds, calls Gemini for analysis, saves report</process>
+        <output>Complete report object</output>
+      </route>
+      
+      <route method="GET" path="/api/reports/pdf/[id]">
+        <process>Generates PDF from report data</process>
+        <output>PDF file download</output>
+      </route>
+      
+      <route method="GET" path="/api/export">
+        <query_params>format (json|csv)</query_params>
+        <process>Compiles all user data</process>
+        <output>Downloadable file</output>
+      </route>
+    </api_routes>
+  </backend>
+
+  <constraints>
+    <api_limits>
+      <limit name="Gemini Flash">Rate limits - implement exponential backoff</limit>
+      <limit name="Supabase Free">500MB database, 2GB storage</limit>
+      <limit name="Photo Upload">Max 5MB per photo, 3 photos per symptom</limit>
+    </api_limits>
+    
+    <performance>
+      <constraint>Lazy load timeline (paginate 20 symptoms per request)</constraint>
+      <constraint>Optimize SVG rendering (memoize, don't re-render on every state change)</constraint>
+      <constraint>Cache Gemini responses where appropriate</constraint>
+      <constraint>Debounce search/filter inputs (300ms)</constraint>
+    </performance>
+    
+    <data_validation>
+      <rule>Severity must be integer 1-10</rule>
+      <rule>Dates cannot be in future</rule>
+      <rule>Required fields: body_part, symptom_type</rule>
+      <rule>Sanitize all text inputs (XSS prevention)</rule>
+      <rule>Validate file types on upload (images only)</rule>
+    </data_validation>
+    
+    <user_experience>
+      <constraint>Loading states for all AI processing (5-15 seconds typical)</constraint>
+      <constraint>Error handling with user-friendly messages (no technical jargon)</constraint>
+      <constraint>Offline detection with clear indicator</constraint>
+      <constraint>Mobile-friendly touch targets and interactions</constraint>
+      <constraint>Maximum 3 clicks to log a symptom</constraint>
+    </user_experience>
+  </constraints>
+
+  <security>
+    <authentication>
+      <method>Supabase Auth (email/password)</method>
+      <sessions>JWT with 7-day refresh tokens</sessions>
+      <protection>Protected routes via middleware, verify auth.uid() on all API routes</protection>
+      <rls>Row Level Security on all tables</rls>
+    </authentication>
+    
+    <data_protection>
+      <transport>HTTPS only (enforced by Vercel)</transport>
+      <storage>Encrypted at rest (Supabase default)</storage>
+      <photos>Private Supabase Storage bucket (authenticated access only)</photos>
+      <tracking>No third-party analytics or tracking</tracking>
+    </data_protection>
+    
+    <api_security>
+      <keys>Gemini API key in environment variables (server-side only)</keys>
+      <rate_limiting>Implement on AI routes to prevent abuse</rate_limiting>
+      <validation>Input validation and sanitization on all endpoints</validation>
+    </api_security>
+    
+    <compliance>
+      <gdpr>Full data export and deletion capabilities</gdpr>
+      <medical_disclaimer>Clear disclaimers that app does not diagnose (avoids medical device regulation)</medical_disclaimer>
+      <privacy_policy>Required before launch</privacy_policy>
+    </compliance>
+  </security>
+
+  <ai_prompts>
+    <prompt name="Symptom Analysis">
+      <![CDATA[
+const prompt = `You are a medical symptom documentation assistant. Your job is to help patients accurately describe their symptoms for their doctor - you do NOT diagnose.
+
+Patient described: "${userInput}"
+
+Generate 3-5 follow-up questions to gather complete symptom information. Questions should cover:
+- Location precision (if not clear)
+- Characteristics (size, appearance, sensation, quality)
+- Severity (1-10 scale)
+- Timeline (when started, duration, changes over time)
+- Triggers and relief factors
+
+Also suggest the body location and symptom category.
+
+Return JSON only:
+{
+  "questions": [
+    {
+      "question": "string",
+      "type": "multiple_choice" | "scale" | "text" | "date",
+      "options": ["array", "of", "options"] | null,
+      "required": boolean
+    }
+  ],
+  "suggested_location": {
+    "body_part": "string",
+    "coordinates": { "x": number, "y": number },
+    "view": "front" | "back"
+  },
+  "symptom_category": "string"
+}`;
+      ]]>
+    </prompt>
+    
+    <prompt name="Entry Structuring">
+      <![CDATA[
+const prompt = `Structure this symptom conversation into a medical entry format.
+
+Initial description: "${initial}"
+Follow-up Q&A: ${JSON.stringify(qAndA)}
+
+Return JSON only:
+{
+  "body_part": "string",
+  "symptom_type": "string",
+  "severity": number,
+  "characteristics": {
+    "size": "string or null",
+    "appearance": "string or null",
+    "color": "string or null",
+    "texture": "string or null",
+    "sensation": "string or null"
+  },
+  "timeline": {
+    "onset": "string",
+    "duration": "string",
+    "changes": "string or null"
+  },
+  "triggers": ["array"] or null,
+  "relief_factors": ["array"] or null,
+  "description": "string - concise medical-style summary"
+}`;
+      ]]>
+    </prompt>
+    
+    <prompt name="Report Generation">
+      <![CDATA[
+const prompt = `Generate a GP-ready symptom report. Be empathetic, accurate, and medically appropriate. Do NOT diagnose - only summarize and identify patterns.
+
+Date range: ${startDate} to ${endDate} (${days} days)
+Symptoms logged: ${JSON.stringify(symptoms)}
+Medications during period: ${JSON.stringify(medications)}
+${conditions?.length ? `Background conditions: ${JSON.stringify(conditions)}` : ''}
+
+Return JSON only:
+{
+  "executive_summary": "2-3 paragraph overview suitable for GP quick-read. If no background conditions provided, frame as patient seeking answers for these symptoms.",
+  "symptom_breakdown": {
+    "by_type": { "type": count },
+    "by_body_part": { "part": count },
+    "average_severity": number,
+    "most_severe": { symptom summary }
+  },
+  "patterns_detected": [
+    {
+      "type": "temporal" | "trigger" | "correlation" | "trend",
+      "description": "string",
+      "confidence": "high" | "medium" | "low",
+      "supporting_data": "string"
+    }
+  ],
+  "suggested_questions": [
+    "Questions patient can ask their GP"
+  ],
+  "nhs_links": [
+    {
+      "title": "string",
+      "url": "https://www.nhs.uk/...",
+      "relevance": "string"
+    }
+  ]
+}`;
+      ]]>
+    </prompt>
+  </ai_prompts>
+
+  <development_priority>
+    <phase number="1" name="Foundation" duration="Week 1">
+      <task>Project setup (Next.js + Supabase + Tailwind)</task>
+      <task>Auth (signup, login, password reset)</task>
+      <task>Database schema + RLS policies</task>
+      <task>Basic navigation shell and layout</task>
+      <task>User profile table and onboarding flow</task>
+      <deliverable>User can sign up, complete onboarding, see empty dashboard</deliverable>
+    </phase>
+    
+    <phase number="2" name="Core Logging" duration="Week 2">
+      <task>AI symptom logging flow (all steps)</task>
+      <task>Gemini integration with error handling</task>
+      <task>Save symptoms to database</task>
+      <task>Basic timeline view (list only)</task>
+      <task>Manual fallback form if AI fails</task>
+      <deliverable>User can log symptoms via AI conversation, view in timeline</deliverable>
+    </phase>
+    
+    <phase number="3" name="Visualization" duration="Week 3">
+      <task>Interactive body map SVG</task>
+      <task>Body map with symptom markers</task>
+      <task>Timeline filters and search</task>
+      <task>Edit and delete symptoms</task>
+      <task>Photo upload flow</task>
+      <deliverable>Full symptom management with body visualization</deliverable>
+    </phase>
+    
+    <phase number="4" name="Reports and Polish" duration="Week 4">
+      <task>AI report generation</task>
+      <task>PDF export</task>
+      <task>Medication management</task>
+      <task>Settings and data export</task>
+      <task>Offline support basics</task>
+      <task>Error handling polish</task>
+      <task>Testing and bug fixes</task>
+      <deliverable>Complete MVP ready for user testing</deliverable>
+    </phase>
+  </development_priority>
+
+</specification>
