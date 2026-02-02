@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { OfflineIndicator } from "@/components/ui/offline-indicator";
+import { ServiceWorkerRegistration } from "@/components/ui/sw-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,8 +31,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <OfflineIndicator />
         {children}
         <Toaster position="top-right" richColors />
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

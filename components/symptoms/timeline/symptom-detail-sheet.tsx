@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Pencil, Trash2, Calendar, Clock, Activity } from "lucide-react";
-import { getBodyPartLabel } from "@/components/symptoms/body-map";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 import {
   getSeverityLabel,
   getSeverityTailwindClass,
@@ -222,6 +222,7 @@ export function SymptomDetailSheet({
                       rel="noopener noreferrer"
                       className="aspect-square overflow-hidden rounded-lg border bg-muted"
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
                         alt={`Symptom photo ${index + 1}`}

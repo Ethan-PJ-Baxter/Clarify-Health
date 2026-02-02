@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Eye } from "lucide-react";
-import { getBodyPartLabel } from "@/components/symptoms/body-map";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 import {
   getSeverityLabel,
   getSeverityTailwindClass,

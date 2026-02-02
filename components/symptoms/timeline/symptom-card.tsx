@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Camera } from "lucide-react";
-import { getBodyPartLabel } from "@/components/symptoms/body-map";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 import {
   getSeverityLabel,
   getSeverityTailwindClass,

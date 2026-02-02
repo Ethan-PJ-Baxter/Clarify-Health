@@ -19,7 +19,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Calendar } from "lucide-react";
-import { getBodyPartLabel } from "@/components/symptoms/body-map";
+import {
+  getBodyPartLabel,
+  getSubRegions,
+  getParentRegionId,
+} from "./region-data";
 import {
   getSeverityLabel,
   getSeverityTailwindClass,
@@ -35,13 +39,30 @@ interface RegionSymptomListProps {
   onLogNew: (regionId: string) => void;
 }
 
+function filterSymptomsForRegion(
+  symptoms: BodyMapSymptom[],
+  regionId: string | null
+): BodyMapSymptom[] {
+  return symptoms.filter((s) => {
+    if (!s.body_part || !regionId) return false;
+    // Exact match
+    if (s.body_part === regionId) return true;
+    // Symptom's parent region matches the selected region
+    if (getParentRegionId(s.body_part) === regionId) return true;
+    // Selected region is a sub-region, and symptom is on the parent
+    const subRegions = getSubRegions(s.body_part);
+    if (subRegions.some((r) => r.id === regionId)) return true;
+    return false;
+  });
+}
+
 function SymptomListContent({
   regionId,
   symptoms,
   onSymptomSelect,
   onLogNew,
 }: Omit<RegionSymptomListProps, "open" | "onOpenChange">) {
-  const regionSymptoms = symptoms.filter((s) => s.body_part === regionId);
+  const regionSymptoms = filterSymptomsForRegion(symptoms, regionId);
 
   return (
     <div className="flex flex-col gap-3">
@@ -114,7 +135,7 @@ export function RegionSymptomList({
 }: RegionSymptomListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const label = regionId ? getBodyPartLabel(regionId) : "";
-  const count = symptoms.filter((s) => s.body_part === regionId).length;
+  const count = filterSymptomsForRegion(symptoms, regionId).length;
 
   if (isDesktop) {
     return (

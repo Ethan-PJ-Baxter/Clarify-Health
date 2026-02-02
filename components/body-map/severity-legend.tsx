@@ -3,10 +3,10 @@
 import { cn } from "@/lib/utils";
 
 const LEGEND_ITEMS = [
-  { label: "Mild", color: "#22c55e", range: "1-3" },
-  { label: "Moderate", color: "#eab308", range: "4-5" },
-  { label: "Severe", color: "#f97316", range: "6-7" },
-  { label: "Critical", color: "#ef4444", range: "8-10" },
+  { label: "Mild", color: "#3b7dd8", range: "1-3" },
+  { label: "Moderate", color: "#c9b517", range: "4-5" },
+  { label: "Severe", color: "#e87a10", range: "6-7" },
+  { label: "Critical", color: "#e52a0d", range: "8-10" },
 ];
 
 interface SeverityLegendProps {

@@ -14,7 +14,7 @@ const navItems = [
   { label: "Log", href: "/log", icon: PlusCircle, enabled: true },
   { label: "Timeline", href: "/timeline", icon: Clock, enabled: true },
   { label: "Body Map", href: "/body-map", icon: User, enabled: true },
-  { label: "More", href: "/settings", icon: Menu, enabled: false },
+  { label: "More", href: "/settings", icon: Menu, enabled: true },
 ];
 
 export function MobileNav({ className }: MobileNavProps) {

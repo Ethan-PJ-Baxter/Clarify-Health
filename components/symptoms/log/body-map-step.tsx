@@ -3,7 +3,8 @@
 import { useState, useCallback } from "react";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BodyMap, getBodyPartLabel } from "@/components/symptoms/body-map";
+import { BodyMapSvg } from "@/components/body-map/body-map-svg";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 
 interface BodyMapStepProps {
   suggestedPart: string;
@@ -34,12 +35,13 @@ export function BodyMapStep({
   }>({ ...suggestedCoords, view: suggestedView });
   const [view, setView] = useState<"front" | "back">(suggestedView);
 
-  const handleSelect = useCallback(
-    (part: string, coords: { x: number; y: number; view: "front" | "back" }) => {
-      setSelectedPart(part);
-      setSelectedCoords(coords);
+  const handleRegionTap = useCallback(
+    (regionId: string) => {
+      setSelectedPart(regionId);
+      // Store a reasonable coordinate for the selected region
+      setSelectedCoords({ x: 0, y: 0, view });
     },
-    []
+    [view]
   );
 
   const handleViewChange = useCallback((newView: "front" | "back") => {
@@ -61,6 +63,7 @@ export function BodyMapStep({
   }
 
   const displayPart = selectedPart || suggestedPart;
+  const displayLabel = getBodyPartLabel(displayPart);
 
   return (
     <div className="space-y-6">
@@ -72,18 +75,19 @@ export function BodyMapStep({
         </p>
       </div>
 
-      <BodyMap
+      <BodyMapSvg
+        mode="selection"
         selectedPart={selectedPart}
         suggestedPart={suggestedPart}
         view={view}
         onViewChange={handleViewChange}
-        onSelect={handleSelect}
+        onRegionTap={handleRegionTap}
       />
 
       {displayPart && (
         <div className="flex items-center justify-center gap-2 text-sm font-medium">
           <MapPin className="size-4 text-primary" />
-          <span>{getBodyPartLabel(displayPart)}</span>
+          <span>{displayLabel}</span>
           {!selectedPart && (
             <span className="text-muted-foreground">(AI suggested)</span>
           )}

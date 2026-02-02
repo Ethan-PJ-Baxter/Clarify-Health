@@ -3,13 +3,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InteractiveSvg } from "./interactive-svg";
 import { SeverityLegend } from "./severity-legend";
 import { RegionSymptomList } from "./region-symptom-list";
 import { SymptomMarkerTooltip } from "./symptom-marker-tooltip";
 import { computeHeatmap, type BodyMapSymptom } from "./heatmap";
+
+const BodyMapDisplay = dynamic(() => import("./body-map-display"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex flex-col items-center gap-4">
+      <Skeleton className="h-8 w-32" />
+      <Skeleton className="h-[420px] w-[240px] rounded-lg" />
+    </div>
+  ),
+});
 
 const DATE_RANGES = [
   { label: "7 days", value: "7d", days: 7 },
@@ -104,17 +114,17 @@ export function BodyMapVisualization({
 
   const handleLongPressRegion = useCallback(
     (regionId: string) => {
-      router.push(`/log?body_part=${regionId}&view=${view}`);
+      router.push(`/log?body_part=${regionId}`);
     },
-    [router, view]
+    [router]
   );
 
   const handleLogNew = useCallback(
     (regionId: string) => {
       setRegionListOpen(false);
-      router.push(`/log?body_part=${regionId}&view=${view}`);
+      router.push(`/log?body_part=${regionId}`);
     },
-    [router, view]
+    [router]
   );
 
   const handleSymptomSelectFromList = useCallback(
@@ -153,31 +163,15 @@ export function BodyMapVisualization({
         ))}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content — loaded client-only to avoid hydration issues */}
       <div className="flex flex-col items-center gap-4">
         {loading ? (
           <div className="flex flex-col items-center gap-4">
             <Skeleton className="h-8 w-32" />
             <Skeleton className="h-[420px] w-[240px] rounded-lg" />
           </div>
-        ) : symptoms.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 py-12">
-            <InteractiveSvg
-              symptoms={[]}
-              heatmapData={new Map()}
-              view={view}
-              onViewChange={setView}
-              onRegionTap={handleRegionTap}
-              onMarkerTap={handleMarkerTap}
-              onLongPressRegion={handleLongPressRegion}
-            />
-            <p className="text-sm text-muted-foreground">
-              No symptoms logged yet. Tap a region or use the log button to get
-              started.
-            </p>
-          </div>
         ) : (
-          <InteractiveSvg
+          <BodyMapDisplay
             symptoms={symptoms}
             heatmapData={heatmapData}
             view={view}

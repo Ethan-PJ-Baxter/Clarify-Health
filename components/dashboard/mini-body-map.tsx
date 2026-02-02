@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BODY_REGIONS } from "@/components/symptoms/body-map";
+import { getRegionsForView } from "@/components/body-map/region-data";
 
 export interface RegionCount {
   count: number;
@@ -27,9 +27,7 @@ export function MiniBodyMap({ regionCounts }: MiniBodyMapProps) {
   );
 
   // Only show front-view regions for the mini map
-  const frontRegions = BODY_REGIONS.filter(
-    (r) => r.view === "front" || r.view === "both"
-  );
+  const frontRegions = getRegionsForView("front");
 
   return (
     <Link

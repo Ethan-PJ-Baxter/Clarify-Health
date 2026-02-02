@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { SymptomLogWizard } from "@/components/symptoms/log/symptom-log-wizard";
 
 export const metadata = {
@@ -5,6 +7,13 @@ export const metadata = {
   description: "Record a new symptom entry.",
 };
 
-export default function LogPage() {
+export default async function LogPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
   return <SymptomLogWizard />;
 }

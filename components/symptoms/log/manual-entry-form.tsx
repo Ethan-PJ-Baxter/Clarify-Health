@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { BodyMap, getBodyPartLabel } from "@/components/symptoms/body-map";
+import { BodyMapSvg } from "@/components/body-map/body-map-svg";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 import {
   getSeverityLabel,
   getSeverityTailwindClass,
@@ -42,11 +43,11 @@ export function ManualEntryForm({ onSave, isSaving }: ManualEntryFormProps) {
   const isValid = bodyPart.trim() !== "" && symptomType.trim() !== "";
 
   const handleBodyPartSelect = useCallback(
-    (part: string, coords: { x: number; y: number; view: "front" | "back" }) => {
-      setBodyPart(part);
-      setBodyCoordinates(coords);
+    (regionId: string) => {
+      setBodyPart(regionId);
+      setBodyCoordinates({ x: 0, y: 0, view: bodyMapView });
     },
-    []
+    [bodyMapView]
   );
 
   const handleViewChange = useCallback((view: "front" | "back") => {
@@ -121,11 +122,12 @@ export function ManualEntryForm({ onSave, isSaving }: ManualEntryFormProps) {
       {/* Body Map */}
       <div className="space-y-2">
         <Label>Body Location *</Label>
-        <BodyMap
+        <BodyMapSvg
+          mode="selection"
           selectedPart={bodyPart || undefined}
           view={bodyMapView}
           onViewChange={handleViewChange}
-          onSelect={handleBodyPartSelect}
+          onRegionTap={handleBodyPartSelect}
         />
         {bodyPart && (
           <p className="text-center text-sm font-medium text-primary">

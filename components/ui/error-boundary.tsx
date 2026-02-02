@@ -5,6 +5,7 @@ interface ErrorBoundaryProps {
   reset: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">

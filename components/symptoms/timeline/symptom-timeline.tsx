@@ -21,7 +21,7 @@ import {
   DEFAULT_FILTERS,
   type TimelineFilters as TimelineFiltersType,
 } from "./timeline-filters";
-import { getBodyPartLabel } from "@/components/symptoms/body-map";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 import type { Tables } from "@/lib/supabase/types";
 
 type Symptom = Tables<"symptoms">;

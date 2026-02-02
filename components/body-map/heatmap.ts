@@ -1,4 +1,4 @@
-import type { BodyRegion } from "@/components/symptoms/body-map";
+import { getSubRegions, BODY_REGIONS, type BodyRegion } from "./region-data";
 
 export interface HeatmapRegionData {
   regionId: string;
@@ -27,6 +27,28 @@ function getSeverityHex(severity: number): string {
   return "#ef4444";
 }
 
+/** Set of all known granular region IDs for quick lookup. */
+const KNOWN_REGION_IDS = new Set(BODY_REGIONS.map((r) => r.id));
+
+/**
+ * Resolve a symptom's body_part to one or more granular region IDs.
+ * If the body_part is a legacy coarse ID (e.g. "chest"), distribute
+ * across all child sub-regions so heatmap fills display correctly.
+ */
+function resolveRegionIds(bodyPart: string): string[] {
+  // Exact match to a granular region
+  if (KNOWN_REGION_IDS.has(bodyPart)) {
+    return [bodyPart];
+  }
+  // Legacy coarse ID — distribute across children
+  const children = getSubRegions(bodyPart);
+  if (children.length > 0) {
+    return children.map((c) => c.id);
+  }
+  // Unknown — return as-is so it still shows up in counts
+  return [bodyPart];
+}
+
 export function computeHeatmap(
   symptoms: BodyMapSymptom[]
 ): Map<string, HeatmapRegionData> {
@@ -37,22 +59,29 @@ export function computeHeatmap(
 
   for (const symptom of symptoms) {
     if (!symptom.body_part) continue;
-    const existing = regionMap.get(symptom.body_part);
     const severity = symptom.severity ?? 5;
-    if (existing) {
-      existing.count++;
-      existing.totalSeverity += severity;
-      existing.maxSeverity = Math.max(existing.maxSeverity, severity);
-    } else {
-      regionMap.set(symptom.body_part, {
-        count: 1,
-        totalSeverity: severity,
-        maxSeverity: severity,
-      });
+    const regionIds = resolveRegionIds(symptom.body_part);
+
+    for (const regionId of regionIds) {
+      const existing = regionMap.get(regionId);
+      if (existing) {
+        existing.count++;
+        existing.totalSeverity += severity;
+        existing.maxSeverity = Math.max(existing.maxSeverity, severity);
+      } else {
+        regionMap.set(regionId, {
+          count: 1,
+          totalSeverity: severity,
+          maxSeverity: severity,
+        });
+      }
     }
   }
 
-  const maxCount = Math.max(1, ...Array.from(regionMap.values()).map((r) => r.count));
+  const maxCount = Math.max(
+    1,
+    ...Array.from(regionMap.values()).map((r) => r.count)
+  );
 
   const result = new Map<string, HeatmapRegionData>();
 
@@ -82,7 +111,7 @@ export function getMarkerColor(severity: number): string {
  * with a small deterministic offset to avoid stacking.
  */
 export function getFallbackPosition(
-  symptomId: string,
+  _symptomId: string,
   region: BodyRegion,
   index: number
 ): { x: number; y: number } {

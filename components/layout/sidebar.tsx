@@ -28,9 +28,9 @@ const navItems = [
   { label: "Log Symptom", href: "/log", icon: PlusCircle, enabled: true },
   { label: "Timeline", href: "/timeline", icon: Clock, enabled: true },
   { label: "Body Map", href: "/body-map", icon: User, enabled: true },
-  { label: "Medications", href: "/medications", icon: Pill, enabled: false },
-  { label: "Reports", href: "/reports", icon: FileText, enabled: false },
-  { label: "Settings", href: "/settings", icon: Settings, enabled: false },
+  { label: "Medications", href: "/medications", icon: Pill, enabled: true },
+  { label: "Reports", href: "/reports", icon: FileText, enabled: true },
+  { label: "Settings", href: "/settings", icon: Settings, enabled: true },
 ];
 
 export function Sidebar({ profile, className }: SidebarProps) {

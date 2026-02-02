@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getBodyPartLabel } from "@/components/symptoms/body-map";
+import { getBodyPartLabel } from "@/components/body-map/region-data";
 import {
   getSeverityLabel,
   getSeverityTailwindClass,

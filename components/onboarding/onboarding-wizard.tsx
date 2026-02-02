@@ -42,7 +42,8 @@ export function OnboardingWizard({ userId }: OnboardingWizardProps) {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }, []);
 
-  async function handleComplete(goToLog: boolean) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async function handleComplete(_goToLog: boolean) {
     setIsSaving(true);
     try {
       const supabase = createClient();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,11 +35,6 @@ function getWeekDays(): { label: string; date: Date }[] {
   });
 }
 
-function handleComingSoon() {
-  toast("Coming soon", {
-    description: "This feature is not available yet.",
-  });
-}
 
 export function DashboardHome({
   profileName,
@@ -179,10 +174,10 @@ export function DashboardHome({
                 </div>
                 <Button
                   variant="ghost"
-                  onClick={handleComingSoon}
+                  asChild
                   className="min-h-[44px] text-sm"
                 >
-                  View All
+                  <Link href="/medications">View All</Link>
                 </Button>
               </div>
             ) : (

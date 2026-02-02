@@ -54,6 +54,13 @@ export const createSymptomSchema = z.object({
   ai_conversation: z.any().optional(),
   ai_characteristics: z.any().optional(),
   body_coordinates: z.any().optional(),
+  body_coordinates_3d: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      z: z.number(),
+    })
+    .optional(),
   mapped_by_ai: z.boolean().optional(),
   user_adjusted_location: z.boolean().optional(),
 });
