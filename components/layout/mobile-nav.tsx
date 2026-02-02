@@ -13,7 +13,7 @@ const navItems = [
   { label: "Home", href: "/", icon: Home, enabled: true },
   { label: "Log", href: "/log", icon: PlusCircle, enabled: true },
   { label: "Timeline", href: "/timeline", icon: Clock, enabled: true },
-  { label: "Body Map", href: "/body-map", icon: User, enabled: false },
+  { label: "Body Map", href: "/body-map", icon: User, enabled: true },
   { label: "More", href: "/settings", icon: Menu, enabled: false },
 ];
 

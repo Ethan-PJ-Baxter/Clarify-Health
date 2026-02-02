@@ -12,7 +12,7 @@ export interface BodyRegion {
   center: { x: number; y: number };
 }
 
-const BODY_REGIONS: BodyRegion[] = [
+export const BODY_REGIONS: BodyRegion[] = [
   // Front view regions
   { id: "head", label: "Head", view: "both", path: "M 140,15 C 140,15 120,15 115,35 C 110,55 115,75 140,80 C 165,75 170,55 165,35 C 160,15 140,15 140,15 Z", center: { x: 140, y: 45 } },
   { id: "neck", label: "Neck", view: "both", path: "M 130,80 L 130,100 L 150,100 L 150,80 Z", center: { x: 140, y: 90 } },

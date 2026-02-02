@@ -10,11 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MiniBodyMap, type RegionCount } from "./mini-body-map";
 
 interface DashboardHomeProps {
   profileName: string | null;
   symptomCount: number;
   medicationCount: number;
+  regionCounts?: Record<string, RegionCount>;
 }
 
 function getWeekDays(): { label: string; date: Date }[] {
@@ -43,6 +45,7 @@ export function DashboardHome({
   profileName,
   symptomCount,
   medicationCount,
+  regionCounts = {},
 }: DashboardHomeProps) {
   const weekDays = getWeekDays();
   const displayName = profileName || "there";
@@ -239,37 +242,8 @@ export function DashboardHome({
             <CardTitle>Body Map</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center py-6">
-              <svg
-                className="mb-4 h-48 w-24 text-muted-foreground/30"
-                viewBox="0 0 100 200"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                aria-hidden="true"
-              >
-                {/* Head */}
-                <circle cx="50" cy="20" r="15" />
-                {/* Neck */}
-                <line x1="50" y1="35" x2="50" y2="45" />
-                {/* Torso */}
-                <ellipse cx="50" cy="80" rx="25" ry="35" />
-                {/* Left arm */}
-                <line x1="25" y1="55" x2="10" y2="100" />
-                <line x1="10" y1="100" x2="5" y2="120" />
-                {/* Right arm */}
-                <line x1="75" y1="55" x2="90" y2="100" />
-                <line x1="90" y1="100" x2="95" y2="120" />
-                {/* Left leg */}
-                <line x1="38" y1="115" x2="30" y2="165" />
-                <line x1="30" y1="165" x2="25" y2="195" />
-                {/* Right leg */}
-                <line x1="62" y1="115" x2="70" y2="165" />
-                <line x1="70" y1="165" x2="75" y2="195" />
-              </svg>
-              <p className="text-sm text-muted-foreground">
-                No symptoms to display
-              </p>
+            <div className="flex flex-col items-center py-4">
+              <MiniBodyMap regionCounts={regionCounts} />
             </div>
           </CardContent>
         </Card>
